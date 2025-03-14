@@ -2,46 +2,62 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User; // Make sure to import the User model
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class UserController extends Controller
 {
-    public function showLoginForm()
+public function showLoginForm()
 {
-    return view('auth.login');
+return view('auth.login');
 }
 
+public function showRegistrationForm()
+{
+return view('auth.register');
+}
 public function login(Request $request)
 {
-    $credentials = $request->only('email', 'password');
+$credentials = $request->only('email', 'password');
 
-    if (Auth::attempt($credentials)) {
-        return redirect()->intended('/');
-    }
+// Attempt to log the user in
+if (Auth::attempt($credentials)) {
+// Redirect to the intended page or default to '/notes'
+return redirect()->intended('/notes');
+}
 
-    return redirect('/login')->with('error', 'Invalid credentials. Please try again.');
+// If authentication fails, redirect back to the login page with an error message
+return redirect()->back()->with('error', 'Invalid credentials. Please try again.');
 }
-public function showRegistrationForm(){
-    return view('auth.register');
-}
+
+
+
 public function register(Request $request)
 {
+// Validate the input
+$validator = Validator::make($request->all(), [
+'name' => 'required|string|max:255',
+'email' => 'required|string|email|max:255|unique:users',
+'password' => 'required|string|min:8|confirmed', // Ensure password confirmation field exists
+]);
 
-    $validated = $request->validate([
-    'name' => 'required|string|max:255',
-    'email' => 'required|string|email|max:255|unique:users',
-    'password' => 'required|string|min:8|confirmed', 
-    ]);
+if ($validator->fails()) {
+return redirect()->back()->withErrors($validator)->withInput();
+}
 
-    $user = User::create([
-    'name' => $validated['name'],
-    'email' => $validated['email'],
-    'password' => Hash::make($validated['password']), 
-    ]);
+// Create the new user
+$user = User::create([
+'name' => $request->name,
+'email' => $request->email,
+'password' => Hash::make($request->password),
+]);
 
-    auth()->login($user);
+// Log the user in after registration
+Auth::login($user);
 
-    return redirect()->route('home'); 
-    }
+return redirect('/notes');
+}
 }
