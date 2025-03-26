@@ -25,7 +25,6 @@ $credentials = $request->only('email', 'password');
 
 // Attempt to log the user in
 if (Auth::attempt($credentials)) {
-// Redirect to the intended page or default to '/notes'
 return redirect()->intended('/notes');
 }
 
@@ -58,6 +57,6 @@ $user = User::create([
 // Log the user in after registration
 Auth::login($user);
 
-return redirect('/notes');
+return redirect('/login');
 }
 }
